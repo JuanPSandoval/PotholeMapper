@@ -92,13 +92,7 @@ Future improvements include:
 
 **Juan Sandoval**  
 📍 Colombia  
-💼 Developer & AI Enthusiast  
-
----
-
-## 🧾 License
-
-This project is released under the **MIT License** — feel free to use and modify it with attribution.
+💼 BackEnd Developer
 
 ---
 
