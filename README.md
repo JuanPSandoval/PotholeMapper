@@ -48,7 +48,6 @@ My_app/
 1. **Clone the repository**
    ```bash
    git clone https://github.com/JuanPSandoval/PotholeMapper.git
-   cd Pothole-Detection-V2/My_app
    ```
 
 2. **Create and activate a virtual environment**
