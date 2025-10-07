@@ -1,0 +1,12 @@
+{
+    "imagenes_cargadas": true,
+    "imagen_segundos": [
+        1,
+        5,
+        7,
+        9,
+        11
+    ],
+    "imagenes_cargadas_labels": true,
+    "esperando_coords": false
+}
