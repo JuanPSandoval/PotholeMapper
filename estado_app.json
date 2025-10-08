@@ -1,12 +1,6 @@
 {
-    "imagenes_cargadas": true,
-    "imagen_segundos": [
-        1,
-        5,
-        7,
-        9,
-        11
-    ],
-    "imagenes_cargadas_labels": true,
+    "imagenes_cargadas": false,
+    "imagen_segundos": [],
+    "imagenes_cargadas_labels": false,
     "esperando_coords": false
 }

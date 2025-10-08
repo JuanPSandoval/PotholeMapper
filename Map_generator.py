@@ -3,21 +3,28 @@ import os
 import json
 from geopy.distance import geodesic
 
-# Rutas predeterminadas
-JSON_PATH = "Coords/cordenadas.json"
-IMAGES_FOLDER = "Img"
-VIDEOS_FOLDER = "Vids"
 HTML_MAP_PATH = "Mapa/MapaFinal.html"
 VELOCIDAD_PATH = "Velocidad/velocidades.json"
 
-def guardar_segundos(grupos):
-    segundos_json = {"grupos": []}
-    for grupo in grupos:
-        segundos = [p[0] for p in grupo]
-        segundos_json["grupos"].append(segundos)
-    os.makedirs(os.path.dirname(VELOCIDAD_PATH), exist_ok=True)
-    with open(VELOCIDAD_PATH, "w") as f:
-        json.dump(segundos_json, f, indent=4)
+def txt_a_json(txt_path, json_path):
+    """
+    Convierte un archivo .txt de coordenadas a un archivo .json con el formato {"grupos": [[lat, lon], ...]}
+    """
+    puntos = []
+    segundos = []
+    with open(txt_path, "r") as archivo:
+        for linea in archivo:
+            if "Segundo" in linea:
+                partes = linea.strip().split(":")
+                segundo = int(partes[0].replace("Segundo", "").strip())
+                coords = partes[1].split(",")
+                lat = float(coords[0].split("=")[1].strip())
+                lon = float(coords[1].split("=")[1].strip())
+                puntos.append([lat, lon])
+                segundos.append(segundo)
+    if puntos:
+        with open(json_path, "w") as f:
+            json.dump({"grupos": [puntos], "segundos": segundos}, f, indent=4)
 
 def calcular_velocidades(grupos, segundos_data):
     velocidades = []
@@ -31,8 +38,8 @@ def calcular_velocidades(grupos, segundos_data):
         total_tiempo_h = 0
 
         for j in range(len(grupo) - 1):
-            lat1, lon1 = grupo[j][1], grupo[j][2]
-            lat2, lon2 = grupo[j+1][1], grupo[j+1][2]
+            lat1, lon1 = grupo[j][0], grupo[j][1]
+            lat2, lon2 = grupo[j+1][0], grupo[j+1][1]
             tiempo_seg = segundos[j+1] - segundos[j]
             tiempo_h = tiempo_seg / 3600
             dist_km = geodesic((lat1, lon1), (lat2, lon2)).km
@@ -45,88 +52,45 @@ def calcular_velocidades(grupos, segundos_data):
 
     return velocidades
 
-def guardar_en_json(puntos_solo_coords):
-    if os.path.exists(JSON_PATH):
-        with open(JSON_PATH, "r") as f:
-            data = json.load(f)
-    else:
-        data = {"grupos": []}
-    data["grupos"].append(puntos_solo_coords)
-    with open(JSON_PATH, "w") as f:
-        json.dump(data, f, indent=4)
+def leer_todos_los_grupos():
+    base_dir = "Coords"
+    todos_los_grupos = []
+    segundos_grupos = []
+    nombres_recorridos = []
+    for sub in os.listdir(base_dir):
+        sub_path = os.path.join(base_dir, sub)
+        if os.path.isdir(sub_path):
+            json_file = os.path.join(sub_path, "cordenadas.json")
+            txt_file = os.path.join(sub_path, "cordenadas.txt")
+            # Si no existe el json pero sí el txt, conviértelo
+            if not os.path.exists(json_file) and os.path.exists(txt_file):
+                txt_a_json(txt_file, json_file)
+            if os.path.exists(json_file):
+                with open(json_file, "r") as f:
+                    data = json.load(f)
+                    grupos = data.get("grupos", [])
+                    segundos = data.get("segundos", [])
+                    if grupos:
+                        todos_los_grupos.append(grupos[0])
+                        segundos_grupos.append(segundos)
+                        nombres_recorridos.append(sub)
+    return todos_los_grupos, segundos_grupos, nombres_recorridos
 
-def generar_mapa(file_path=None, segundos_filtrados=None):
-    print("Generando mapa...")
-
-    if file_path:
-        puntos = []
-
-        with open(file_path, "r") as archivo:
-            for linea in archivo:
-                if "Segundo" in linea:
-                    partes = linea.strip().split(":")
-                    segundo = int(partes[0].split()[1])
-                    coords = partes[1].split(",")
-                    lat = float(coords[0].split("=")[1].strip())
-                    lon = float(coords[1].split("=")[1].strip())
-                    if segundos_filtrados is None or segundo in segundos_filtrados:
-                        puntos.append([segundo, lat, lon])
-
-        if not puntos:
-            print("❌ No se encontraron puntos.")
-            return
-        else:
-            puntos_solo_coords = [[lat, lon] for _, lat, lon in puntos]
-            guardar_en_json(puntos_solo_coords)
-
-        
-        # Cargar grupos actuales y guardar segundos en JSON
-        with open(JSON_PATH, "r") as f:
-            coords_data = json.load(f)
-            todos_los_grupos = coords_data.get("grupos", [])
-
-        # Guardar segundos en base al nuevo grupo
-        if os.path.exists(VELOCIDAD_PATH):
-            with open(VELOCIDAD_PATH, "r") as f:
-                segundos_json = json.load(f)
-        else:
-            segundos_json = {"grupos": []}
-        segundos_grupos = segundos_json.get("grupos", [])
-        segundos_grupos.append([p[0] for p in puntos])
-        with open(VELOCIDAD_PATH, "w") as f:
-            json.dump({"grupos": segundos_grupos}, f, indent=4)
-
-    else:
-        if not os.path.exists(JSON_PATH):
-            print("❌ No existe el archivo de coordenadas.")
-            return
-        with open(JSON_PATH, "r") as f:
-            coords_data = json.load(f)
-            todos_los_grupos = coords_data.get("grupos", [])
-
+def generar_mapa_desde_todas_las_subcarpetas():
+    print("Generando mapa desde todas las subcarpetas...")
+    todos_los_grupos, segundos_grupos, nombres_recorridos = leer_todos_los_grupos()
     if not todos_los_grupos:
         print("❌ No hay puntos registrados para generar el mapa.")
         return
 
-    # Cargar segundos y calcular velocidades
-    if os.path.exists(VELOCIDAD_PATH):
-        with open(VELOCIDAD_PATH, "r") as f:
-            segundos_data = json.load(f).get("grupos", [])
-    else:
-        segundos_data = []
+    velocidades = calcular_velocidades(todos_los_grupos, segundos_grupos)
 
-    velocidades = calcular_velocidades(
-        [[(0, lat, lon) for lat, lon in grupo] for grupo in todos_los_grupos],
-        segundos_data
-    )
-
-    # Crear mapa
     mapa = folium.Map(location=todos_los_grupos[0][0], zoom_start=18, tiles="OpenStreetMap")
     total_idx = 1
 
-    for i, grupo in enumerate(todos_los_grupos):
+    for i, (grupo, segundos, nombre_recorrido) in enumerate(zip(todos_los_grupos, segundos_grupos, nombres_recorridos)):
         coords_js = [[lat, lon] for lat, lon in grupo]
-        video_src = f"../vids/{i+1}.webm"
+        video_src = f"../vids/{nombre_recorrido}/video.webm"
 
         js = f"""
         function onClickGrupo{i}() {{
@@ -139,43 +103,28 @@ def generar_mapa(file_path=None, segundos_filtrados=None):
         mapa.get_root().script.add_child(folium.Element(js))
 
         polyline = folium.PolyLine(grupo, color="blue", weight=4, opacity=0.8)
-        polyline.add_child(folium.Popup(f'<a href="#" onclick="onClickGrupo{i}()">📹 Ver video</a>'))
+        polyline.add_child(folium.Popup(f'<a href="#" onclick="onClickGrupo{i}()">Ver video</a>'))
         polyline.add_to(mapa)
 
-        for lat, lon in grupo:
-            img_path = os.path.join(IMAGES_FOLDER, f"{total_idx}.webp")
-            if os.path.exists(img_path):
-                html = f'''
-                <div style="position: relative; width: 150px;">
-                    <button onclick="mostrarImagen('../img/{total_idx}.webp')" style="
-                        position: absolute;
-                        top: 2px;
-                        left: 2px;
-                        padding: 2px 4px;
-                        font-size: 10px;
-                        border: none;
-                        background-color: transparent;
-                        border-radius: 3px;
-                        cursor: pointer;
-                        z-index: 10;
-                    ">🔍</button>
-                    <img src="../img/{total_idx}.webp" width="150px" style="display: block; border-radius: 4px;">
-                </div>
-                '''
-                popup = folium.Popup(html, max_width=180)
-            else:
-                popup = folium.Popup("Imagen no encontrada", max_width=150)
-
-            folium.CircleMarker(
-                location=[lat, lon],
-                radius=4,
-                color='blue',
-                fill=True,
-                fill_color='blue',
-                fill_opacity=0.9,
-                popup=popup
-            ).add_to(mapa)
-
+        # Mapear solo los frames que existen en Img/recorridoX con nombre igual al segundo
+        img_dir = os.path.join("Img", nombre_recorrido)
+        for idx, (lat, lon) in enumerate(grupo):
+            if idx < len(segundos):
+                segundo = segundos[idx]
+                img_path = os.path.join(img_dir, f"{segundo}.webp")
+                if os.path.exists(img_path):
+                    # Popup solo con la imagen y opción de ampliar
+                    popup = folium.Popup(
+                        f"""
+                        <img src='../Img/{nombre_recorrido}/{segundo}.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/{nombre_recorrido}/{segundo}.webp')">
+                        """,
+                        max_width=220
+                    )
+                    folium.Marker(
+                        location=[lat, lon],
+                        icon=folium.Icon(color="blue", icon="camera", prefix="fa"),
+                        popup=popup
+                    ).add_to(mapa)
             total_idx += 1
 
     todos_los_puntos = [pt for grupo in todos_los_grupos for pt in grupo]
@@ -228,6 +177,36 @@ def generar_mapa(file_path=None, segundos_filtrados=None):
         </div>
     </div>
 
+    <div id="imgModal" style="
+        display: none;
+        position: fixed;
+        z-index: 10001;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.85);
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    ">
+        <span onclick="cerrarImgModal()" style="
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            z-index: 10002;">&times;</span>
+        <img id="imgAmpliada" src="" style="
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.7);
+        ">
+    </div>
+
     <script>
     function cerrarModal() {
         var modal = document.getElementById('videoModal');
@@ -236,59 +215,21 @@ def generar_mapa(file_path=None, segundos_filtrados=None):
         video.currentTime = 0;
         modal.style.display = 'none';
     }
-    </script>
-    """
-    mapa.get_root().html.add_child(folium.Element(modal_html))
-
-    # Modal de imagen ampliada
-    imagen_modal = """
-    <div id="imagenModal" style="
-        display: none;
-        position: fixed;
-        z-index: 10000;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.8);
-        justify-content: center;
-        align-items: center;
-    ">
-        <span onclick="cerrarImagenModal()" style="
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            font-size: 40px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            z-index: 10001;">&times;</span>
-
-        <img id="imagenAmpliada" src="" style="
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        ">
-    </div>
-
-    <script>
-    function mostrarImagen(src) {
-        var modal = document.getElementById('imagenModal');
-        var img = document.getElementById('imagenAmpliada');
+    function ampliarImagen(src) {
+        var modal = document.getElementById('imgModal');
+        var img = document.getElementById('imgAmpliada');
         img.src = src;
         modal.style.display = 'flex';
     }
-
-    function cerrarImagenModal() {
-        var modal = document.getElementById('imagenModal');
+    function cerrarImgModal() {
+        var modal = document.getElementById('imgModal');
         modal.style.display = 'none';
     }
     </script>
     """
-    mapa.get_root().html.add_child(folium.Element(imagen_modal))
+    mapa.get_root().html.add_child(folium.Element(modal_html))
 
-    # Script para mostrar coordenadas al pasar el mouse por enxima
+    # Script para mostrar coordenadas al pasar el mouse por encima
     hover_script = """
     <script>
     window.addEventListener("load", function () {
@@ -310,13 +251,10 @@ def generar_mapa(file_path=None, segundos_filtrados=None):
         coordDisplay.addTo(mapInstance);
         var coordDiv = document.querySelector('.coord-display');
 
-        const velocidades = """ + json.dumps(velocidades) + """;
-
         function mostrarDatos(index, e) {
             coordDiv.innerHTML =
                 "📍 Lat: " + e.latlng.lat.toFixed(6) +
-                "<br>📍 Lng: " + e.latlng.lng.toFixed(6) +
-                "<br>🚗 Vel: " + velocidades[index] + " km/h";
+                "<br>📍 Lng: " + e.latlng.lng.toFixed(6);
         }
 
         function limpiarCoords() {

@@ -17,7 +17,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_7bbfa968a463a0c61a4c3189f0448d93 {
+                #map_f0738a2276d6f8372b04a3987af27304 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -99,6 +99,36 @@
         </div>
     </div>
 
+    <div id="imgModal" style="
+        display: none;
+        position: fixed;
+        z-index: 10001;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.85);
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    ">
+        <span onclick="cerrarImgModal()" style="
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            z-index: 10002;">&times;</span>
+        <img id="imgAmpliada" src="" style="
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.7);
+        ">
+    </div>
+
     <script>
     function cerrarModal() {
         var modal = document.getElementById('videoModal');
@@ -107,49 +137,14 @@
         video.currentTime = 0;
         modal.style.display = 'none';
     }
-    </script>
-    
-    
-    <div id="imagenModal" style="
-        display: none;
-        position: fixed;
-        z-index: 10000;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.8);
-        justify-content: center;
-        align-items: center;
-    ">
-        <span onclick="cerrarImagenModal()" style="
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            font-size: 40px;
-            font-weight: bold;
-            color: white;
-            cursor: pointer;
-            z-index: 10001;">&times;</span>
-
-        <img id="imagenAmpliada" src="" style="
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        ">
-    </div>
-
-    <script>
-    function mostrarImagen(src) {
-        var modal = document.getElementById('imagenModal');
-        var img = document.getElementById('imagenAmpliada');
+    function ampliarImagen(src) {
+        var modal = document.getElementById('imgModal');
+        var img = document.getElementById('imgAmpliada');
         img.src = src;
         modal.style.display = 'flex';
     }
-
-    function cerrarImagenModal() {
-        var modal = document.getElementById('imagenModal');
+    function cerrarImgModal() {
+        var modal = document.getElementById('imgModal');
         modal.style.display = 'none';
     }
     </script>
@@ -175,13 +170,10 @@
         coordDisplay.addTo(mapInstance);
         var coordDiv = document.querySelector('.coord-display');
 
-        const velocidades = [22.42, 33.04];
-
         function mostrarDatos(index, e) {
             coordDiv.innerHTML =
                 "📍 Lat: " + e.latlng.lat.toFixed(6) +
-                "<br>📍 Lng: " + e.latlng.lng.toFixed(6) +
-                "<br>🚗 Vel: " + velocidades[index] + " km/h";
+                "<br>📍 Lng: " + e.latlng.lng.toFixed(6);
         }
 
         function limpiarCoords() {
@@ -201,7 +193,7 @@
     </script>
     
     
-            <div class="folium-map" id="map_7bbfa968a463a0c61a4c3189f0448d93" ></div>
+            <div class="folium-map" id="map_f0738a2276d6f8372b04a3987af27304" ></div>
         
 </body>
 <script>
@@ -210,23 +202,15 @@
         function onClickGrupo0() {
             var modal = document.getElementById('videoModal');
             var video = document.getElementById('videoPlayer');
-            video.src = '../vids/1.webm';
+            video.src = '../vids/recorrido1/video.webm';
             modal.style.display = 'flex';
         }
         
     
-        function onClickGrupo1() {
-            var modal = document.getElementById('videoModal');
-            var video = document.getElementById('videoPlayer');
-            video.src = '../vids/2.webm';
-            modal.style.display = 'flex';
-        }
-        
-    
-            var map_7bbfa968a463a0c61a4c3189f0448d93 = L.map(
-                "map_7bbfa968a463a0c61a4c3189f0448d93",
+            var map_f0738a2276d6f8372b04a3987af27304 = L.map(
+                "map_f0738a2276d6f8372b04a3987af27304",
                 {
-                    center: [4.4338259, -75.2154676],
+                    center: [4.442146831012367, -75.21944242366466],
                     crs: L.CRS.EPSG3857,
                     ...{
   "zoom": 18,
@@ -241,7 +225,7 @@
 
         
     
-            var tile_layer_b8c85e04450ac0ccb2f7d1f705297a04 = L.tileLayer(
+            var tile_layer_ff077551e81b0203b222864f16dca04c = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
   "minZoom": 0,
@@ -258,402 +242,452 @@
             );
         
     
-            tile_layer_b8c85e04450ac0ccb2f7d1f705297a04.addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+            tile_layer_ff077551e81b0203b222864f16dca04c.addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-            var poly_line_688ab2273f4e5ef5b2a95ec38a31625e = L.polyline(
-                [[4.4338259, -75.2154676], [4.4340367, -75.2154097], [4.434248, -75.2153928], [4.4343051, -75.2153872], [4.4343766, -75.2153737], [4.4344029, -75.2153614], [4.4344468, -75.2153334], [4.4344673, -75.2153025], [4.4344796, -75.2152572], [4.4344627, -75.2149712]],
+            var poly_line_807caebe60062a6ccdec68593e398088 = L.polyline(
+                [[4.442146831012367, -75.21944242366466], [4.442330098785159, -75.21935107753669], [4.4424380356116275, -75.21930709606768], [4.4424953770442706, -75.21928228600824], [4.44259994082674, -75.21923492134916], [4.442834928190294, -75.21912553154158], [4.443006952387285, -75.21901952492395], [4.443180100881579, -75.21892141241618], [4.443282415884169, -75.2188650259175], [4.443276794181367, -75.21863835219278], [4.4433228921439945, -75.2183451423996]],
                 {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_49127ac4361e536fed1d6baeeffd0ed1 = L.popup({
+        var popup_fe901b92af67caa80f58b91c7d816452 = L.popup({
   "maxWidth": "100%",
 });
 
         
             
-                var html_c6dc3991a68d80058131b54757e147ef = $(`<div id="html_c6dc3991a68d80058131b54757e147ef" style="width: 100.0%; height: 100.0%;"><a href="#" onclick="onClickGrupo0()">📹 Ver video</a></div>`)[0];
-                popup_49127ac4361e536fed1d6baeeffd0ed1.setContent(html_c6dc3991a68d80058131b54757e147ef);
+                var html_58f576b48ea6e78d4f6ad3bfc7377f63 = $(`<div id="html_58f576b48ea6e78d4f6ad3bfc7377f63" style="width: 100.0%; height: 100.0%;"><a href="#" onclick="onClickGrupo0()">📹 Ver video</a></div>`)[0];
+                popup_fe901b92af67caa80f58b91c7d816452.setContent(html_58f576b48ea6e78d4f6ad3bfc7377f63);
             
         
 
-        poly_line_688ab2273f4e5ef5b2a95ec38a31625e.bindPopup(popup_49127ac4361e536fed1d6baeeffd0ed1)
+        poly_line_807caebe60062a6ccdec68593e398088.bindPopup(popup_fe901b92af67caa80f58b91c7d816452)
         ;
 
         
     
     
-            var circle_marker_16c95697557e4ee2ca8071368cda2674 = L.circleMarker(
-                [4.4338259, -75.2154676],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+            var marker_fa6172996f68bc6b91e6d3e496d91c89 = L.marker(
+                [4.442146831012367, -75.21944242366466],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_c394dbaf9ea39be860af0bb0f193cdb3 = L.popup({
-  "maxWidth": 180,
+            var icon_37bd9b2ddd2f28dcacc42d968a075d78 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5f139fe9967052019053a26285ca8de1 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_95c0db34387aedf96009535d5272f81d = $(`<div id="html_95c0db34387aedf96009535d5272f81d" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/1.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/1.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_c394dbaf9ea39be860af0bb0f193cdb3.setContent(html_95c0db34387aedf96009535d5272f81d);
+                var html_5f7831e58e22578768553f4b35b120cd = $(`<div id="html_5f7831e58e22578768553f4b35b120cd" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/1.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/1.webp')">                         </div>`)[0];
+                popup_5f139fe9967052019053a26285ca8de1.setContent(html_5f7831e58e22578768553f4b35b120cd);
             
         
 
-        circle_marker_16c95697557e4ee2ca8071368cda2674.bindPopup(popup_c394dbaf9ea39be860af0bb0f193cdb3)
+        marker_fa6172996f68bc6b91e6d3e496d91c89.bindPopup(popup_5f139fe9967052019053a26285ca8de1)
         ;
 
         
     
     
-            var circle_marker_92395671119a898cdd0a814ad024d606 = L.circleMarker(
-                [4.4340367, -75.2154097],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_fa6172996f68bc6b91e6d3e496d91c89.setIcon(icon_37bd9b2ddd2f28dcacc42d968a075d78);
+            
+    
+            var marker_335bc7de88d58e4a63a43bf401788047 = L.marker(
+                [4.442330098785159, -75.21935107753669],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_80d6845613f1058b5aacfc754a8b5fe9 = L.popup({
-  "maxWidth": 180,
+            var icon_394ce9fcb89a8e35d0b4693255f90677 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_441e5556d9846e743a156be2ec28d659 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_e86ec577679931524f77389966fe9e78 = $(`<div id="html_e86ec577679931524f77389966fe9e78" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/2.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/2.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_80d6845613f1058b5aacfc754a8b5fe9.setContent(html_e86ec577679931524f77389966fe9e78);
+                var html_10a1de133c7051ad56859bd99c808589 = $(`<div id="html_10a1de133c7051ad56859bd99c808589" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/2.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/2.webp')">                         </div>`)[0];
+                popup_441e5556d9846e743a156be2ec28d659.setContent(html_10a1de133c7051ad56859bd99c808589);
             
         
 
-        circle_marker_92395671119a898cdd0a814ad024d606.bindPopup(popup_80d6845613f1058b5aacfc754a8b5fe9)
+        marker_335bc7de88d58e4a63a43bf401788047.bindPopup(popup_441e5556d9846e743a156be2ec28d659)
         ;
 
         
     
     
-            var circle_marker_8721ffb3050140496aa1f212a7c39f59 = L.circleMarker(
-                [4.434248, -75.2153928],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_335bc7de88d58e4a63a43bf401788047.setIcon(icon_394ce9fcb89a8e35d0b4693255f90677);
+            
+    
+            var marker_847834d41c19ed71c267a5f07d1372eb = L.marker(
+                [4.4424380356116275, -75.21930709606768],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_5d4ec1e45600ce40d956bde31e40218a = L.popup({
-  "maxWidth": 180,
+            var icon_1a9798f20eaf03508551b0bc420ca474 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f3bac1cb72194573cc6c12ab0a86a06f = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_dadc5243d47f876f1c0d63aeec4a98af = $(`<div id="html_dadc5243d47f876f1c0d63aeec4a98af" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/3.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/3.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_5d4ec1e45600ce40d956bde31e40218a.setContent(html_dadc5243d47f876f1c0d63aeec4a98af);
+                var html_0e53fd046811fc35304c849d84cb55b0 = $(`<div id="html_0e53fd046811fc35304c849d84cb55b0" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/3.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/3.webp')">                         </div>`)[0];
+                popup_f3bac1cb72194573cc6c12ab0a86a06f.setContent(html_0e53fd046811fc35304c849d84cb55b0);
             
         
 
-        circle_marker_8721ffb3050140496aa1f212a7c39f59.bindPopup(popup_5d4ec1e45600ce40d956bde31e40218a)
+        marker_847834d41c19ed71c267a5f07d1372eb.bindPopup(popup_f3bac1cb72194573cc6c12ab0a86a06f)
         ;
 
         
     
     
-            var circle_marker_abd2dc7074c1c29f51ca59a860292459 = L.circleMarker(
-                [4.4343051, -75.2153872],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_847834d41c19ed71c267a5f07d1372eb.setIcon(icon_1a9798f20eaf03508551b0bc420ca474);
+            
+    
+            var marker_268f0f08ea3e2ace97f26b4de42be047 = L.marker(
+                [4.4424953770442706, -75.21928228600824],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_95bc324a5bfe82a99bc05961d7b3f5fa = L.popup({
-  "maxWidth": 180,
+            var icon_a7a8b6c2b8de926863128482dc05e73c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_0c806d995d8115c1caef2e23237e2a41 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_ec40155670cc6ab98be392e516fd18ad = $(`<div id="html_ec40155670cc6ab98be392e516fd18ad" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/4.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/4.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_95bc324a5bfe82a99bc05961d7b3f5fa.setContent(html_ec40155670cc6ab98be392e516fd18ad);
+                var html_155c3830e6fa66973185069ed7313aa0 = $(`<div id="html_155c3830e6fa66973185069ed7313aa0" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/4.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/4.webp')">                         </div>`)[0];
+                popup_0c806d995d8115c1caef2e23237e2a41.setContent(html_155c3830e6fa66973185069ed7313aa0);
             
         
 
-        circle_marker_abd2dc7074c1c29f51ca59a860292459.bindPopup(popup_95bc324a5bfe82a99bc05961d7b3f5fa)
+        marker_268f0f08ea3e2ace97f26b4de42be047.bindPopup(popup_0c806d995d8115c1caef2e23237e2a41)
         ;
 
         
     
     
-            var circle_marker_e5e192634d7cbb2d167b8013b5f07a40 = L.circleMarker(
-                [4.4343766, -75.2153737],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_268f0f08ea3e2ace97f26b4de42be047.setIcon(icon_a7a8b6c2b8de926863128482dc05e73c);
+            
+    
+            var marker_74c98ad7b0bec447a3536c64f50d90ad = L.marker(
+                [4.44259994082674, -75.21923492134916],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_bc6df7150dc7e3913f344823947f303c = L.popup({
-  "maxWidth": 180,
+            var icon_a29b4ebf8a9580be1e961af939ed0669 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_452aeefd62e5b68ee156386defda5647 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_d3b908008b8dff4ed904f21b4404cb0e = $(`<div id="html_d3b908008b8dff4ed904f21b4404cb0e" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/5.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/5.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_bc6df7150dc7e3913f344823947f303c.setContent(html_d3b908008b8dff4ed904f21b4404cb0e);
+                var html_4f74dc095b29cbad98921337fdcc4fc0 = $(`<div id="html_4f74dc095b29cbad98921337fdcc4fc0" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/5.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/5.webp')">                         </div>`)[0];
+                popup_452aeefd62e5b68ee156386defda5647.setContent(html_4f74dc095b29cbad98921337fdcc4fc0);
             
         
 
-        circle_marker_e5e192634d7cbb2d167b8013b5f07a40.bindPopup(popup_bc6df7150dc7e3913f344823947f303c)
+        marker_74c98ad7b0bec447a3536c64f50d90ad.bindPopup(popup_452aeefd62e5b68ee156386defda5647)
         ;
 
         
     
     
-            var circle_marker_b632e95935f7bbab61d0b467680c0d7f = L.circleMarker(
-                [4.4344029, -75.2153614],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_74c98ad7b0bec447a3536c64f50d90ad.setIcon(icon_a29b4ebf8a9580be1e961af939ed0669);
+            
+    
+            var marker_8a452573f3b499dac8cf1cfd681a4d33 = L.marker(
+                [4.442834928190294, -75.21912553154158],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_8274e79c4527eafb6a8ea1fe973d6b2c = L.popup({
-  "maxWidth": 180,
+            var icon_054edb62566b6b2ef3eaafb0078fcf4f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_3b6d6e653231658ce4ebdc52bed63062 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_9d1b50a992491d0822eddd040e6d0bbb = $(`<div id="html_9d1b50a992491d0822eddd040e6d0bbb" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/6.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/6.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_8274e79c4527eafb6a8ea1fe973d6b2c.setContent(html_9d1b50a992491d0822eddd040e6d0bbb);
+                var html_8dd4bca3d17c5f90c4b1b41fdd564faa = $(`<div id="html_8dd4bca3d17c5f90c4b1b41fdd564faa" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/6.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/6.webp')">                         </div>`)[0];
+                popup_3b6d6e653231658ce4ebdc52bed63062.setContent(html_8dd4bca3d17c5f90c4b1b41fdd564faa);
             
         
 
-        circle_marker_b632e95935f7bbab61d0b467680c0d7f.bindPopup(popup_8274e79c4527eafb6a8ea1fe973d6b2c)
+        marker_8a452573f3b499dac8cf1cfd681a4d33.bindPopup(popup_3b6d6e653231658ce4ebdc52bed63062)
         ;
 
         
     
     
-            var circle_marker_cf511c4f143168d7abc40248e3bac89a = L.circleMarker(
-                [4.4344468, -75.2153334],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_8a452573f3b499dac8cf1cfd681a4d33.setIcon(icon_054edb62566b6b2ef3eaafb0078fcf4f);
+            
+    
+            var marker_6f943c18a357bee053b217a3109cfb5f = L.marker(
+                [4.443006952387285, -75.21901952492395],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_7391959373b108d4a20c69c916f3a044 = L.popup({
-  "maxWidth": 180,
+            var icon_380dfdb547087b3823759d61bc792761 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f9e2199b10f425e1cbf936853498d81c = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_958472f731dcae8a2abf1b2740cf358d = $(`<div id="html_958472f731dcae8a2abf1b2740cf358d" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/7.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/7.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_7391959373b108d4a20c69c916f3a044.setContent(html_958472f731dcae8a2abf1b2740cf358d);
+                var html_932c0b9b81da12ae7252d844824a39f2 = $(`<div id="html_932c0b9b81da12ae7252d844824a39f2" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/7.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/7.webp')">                         </div>`)[0];
+                popup_f9e2199b10f425e1cbf936853498d81c.setContent(html_932c0b9b81da12ae7252d844824a39f2);
             
         
 
-        circle_marker_cf511c4f143168d7abc40248e3bac89a.bindPopup(popup_7391959373b108d4a20c69c916f3a044)
+        marker_6f943c18a357bee053b217a3109cfb5f.bindPopup(popup_f9e2199b10f425e1cbf936853498d81c)
         ;
 
         
     
     
-            var circle_marker_e4a27b6b80e5d452ee8fa52664d58031 = L.circleMarker(
-                [4.4344673, -75.2153025],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_6f943c18a357bee053b217a3109cfb5f.setIcon(icon_380dfdb547087b3823759d61bc792761);
+            
+    
+            var marker_d81497b56b6cda5372a6456579e475e3 = L.marker(
+                [4.443180100881579, -75.21892141241618],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_b611eab2dd7253a19effde7e3f8074bd = L.popup({
-  "maxWidth": 180,
+            var icon_ab5e92bc94e9fc527273bc6cc85abde5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_27e110abefcb665f9deb4c2e91751119 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_f0fb6311dc75a0a02c93c60b9c8c940b = $(`<div id="html_f0fb6311dc75a0a02c93c60b9c8c940b" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/8.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/8.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_b611eab2dd7253a19effde7e3f8074bd.setContent(html_f0fb6311dc75a0a02c93c60b9c8c940b);
+                var html_d190bc0f4862353480aef953715271eb = $(`<div id="html_d190bc0f4862353480aef953715271eb" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/8.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/8.webp')">                         </div>`)[0];
+                popup_27e110abefcb665f9deb4c2e91751119.setContent(html_d190bc0f4862353480aef953715271eb);
             
         
 
-        circle_marker_e4a27b6b80e5d452ee8fa52664d58031.bindPopup(popup_b611eab2dd7253a19effde7e3f8074bd)
+        marker_d81497b56b6cda5372a6456579e475e3.bindPopup(popup_27e110abefcb665f9deb4c2e91751119)
         ;
 
         
     
     
-            var circle_marker_1cadcd1bd7a75932cd24e258205d45b8 = L.circleMarker(
-                [4.4344796, -75.2152572],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_d81497b56b6cda5372a6456579e475e3.setIcon(icon_ab5e92bc94e9fc527273bc6cc85abde5);
+            
+    
+            var marker_ac01b2cda0c95307bea2be1fac552127 = L.marker(
+                [4.443282415884169, -75.2188650259175],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_c1166ea59842d0884af58cb18a2a8a91 = L.popup({
-  "maxWidth": 180,
+            var icon_d6ca8a06f0cd77924652f120c8b6e0e5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_26282dd33775b68f62279f1b7dbed8f5 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_79bae12a10d1e68810cd444a75c4f466 = $(`<div id="html_79bae12a10d1e68810cd444a75c4f466" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/9.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/9.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_c1166ea59842d0884af58cb18a2a8a91.setContent(html_79bae12a10d1e68810cd444a75c4f466);
+                var html_1ba349ea6c31969024fab321f118029c = $(`<div id="html_1ba349ea6c31969024fab321f118029c" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/9.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/9.webp')">                         </div>`)[0];
+                popup_26282dd33775b68f62279f1b7dbed8f5.setContent(html_1ba349ea6c31969024fab321f118029c);
             
         
 
-        circle_marker_1cadcd1bd7a75932cd24e258205d45b8.bindPopup(popup_c1166ea59842d0884af58cb18a2a8a91)
+        marker_ac01b2cda0c95307bea2be1fac552127.bindPopup(popup_26282dd33775b68f62279f1b7dbed8f5)
         ;
 
         
     
     
-            var circle_marker_d171c93b48db72009aba2fbd1e21e173 = L.circleMarker(
-                [4.4344627, -75.2149712],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_ac01b2cda0c95307bea2be1fac552127.setIcon(icon_d6ca8a06f0cd77924652f120c8b6e0e5);
+            
+    
+            var marker_e72894bea30be85855150632089e2ba3 = L.marker(
+                [4.443276794181367, -75.21863835219278],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_90f4ed61de7cdc10ebc951f8ab05f825 = L.popup({
-  "maxWidth": 180,
+            var icon_1d1dc568cc9ea7d9ac42c731260220e5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_255f5413e427e4763397d73787628cac = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_9b9142d47cc55d04c188bee38c175cb3 = $(`<div id="html_9b9142d47cc55d04c188bee38c175cb3" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/10.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/10.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_90f4ed61de7cdc10ebc951f8ab05f825.setContent(html_9b9142d47cc55d04c188bee38c175cb3);
+                var html_1fba01a0e1a741058c5d5fd328d03395 = $(`<div id="html_1fba01a0e1a741058c5d5fd328d03395" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/10.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/10.webp')">                         </div>`)[0];
+                popup_255f5413e427e4763397d73787628cac.setContent(html_1fba01a0e1a741058c5d5fd328d03395);
             
         
 
-        circle_marker_d171c93b48db72009aba2fbd1e21e173.bindPopup(popup_90f4ed61de7cdc10ebc951f8ab05f825)
+        marker_e72894bea30be85855150632089e2ba3.bindPopup(popup_255f5413e427e4763397d73787628cac)
         ;
 
         
     
     
-            var poly_line_38d182a01d0ddcbd8fa199016ced04bc = L.polyline(
-                [[4.4396982, -75.221622], [4.4397883, -75.2221951], [4.4398063, -75.2223093], [4.4398169, -75.2223804], [4.4398224, -75.2224394]],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 0.8, "smoothFactor": 1.0, "stroke": true, "weight": 4}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
+                marker_e72894bea30be85855150632089e2ba3.setIcon(icon_1d1dc568cc9ea7d9ac42c731260220e5);
+            
+    
+            var marker_efd7e77c41ebd2726e3957df395b3aa4 = L.marker(
+                [4.4433228921439945, -75.2183451423996],
+                {
+}
+            ).addTo(map_f0738a2276d6f8372b04a3987af27304);
         
     
-        var popup_ec6a8192af600f61260927e156bb0e6c = L.popup({
-  "maxWidth": "100%",
+            var icon_4910e9e3110422b7332071c5f84ced72 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "blue",
+  "iconColor": "white",
+  "icon": "camera",
+  "prefix": "fa",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_22d9d409f8f6f78e0869a70e385b0e22 = L.popup({
+  "maxWidth": 220,
 });
 
         
             
-                var html_505c8628674e84a9ed7ab899def5b9fc = $(`<div id="html_505c8628674e84a9ed7ab899def5b9fc" style="width: 100.0%; height: 100.0%;"><a href="#" onclick="onClickGrupo1()">📹 Ver video</a></div>`)[0];
-                popup_ec6a8192af600f61260927e156bb0e6c.setContent(html_505c8628674e84a9ed7ab899def5b9fc);
+                var html_f61893aca199fd38283ff91db6da00ab = $(`<div id="html_f61893aca199fd38283ff91db6da00ab" style="width: 100.0%; height: 100.0%;">                         <img src='../Img/recorrido1/11.webp' width='200' style='cursor:pointer;' onclick="ampliarImagen('../Img/recorrido1/11.webp')">                         </div>`)[0];
+                popup_22d9d409f8f6f78e0869a70e385b0e22.setContent(html_f61893aca199fd38283ff91db6da00ab);
             
         
 
-        poly_line_38d182a01d0ddcbd8fa199016ced04bc.bindPopup(popup_ec6a8192af600f61260927e156bb0e6c)
+        marker_efd7e77c41ebd2726e3957df395b3aa4.bindPopup(popup_22d9d409f8f6f78e0869a70e385b0e22)
         ;
 
         
     
     
-            var circle_marker_59967d335a6bce8df008f6ae8216fd5b = L.circleMarker(
-                [4.4396982, -75.221622],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
-        
-    
-        var popup_834037d41148029dbea9532e9090acdb = L.popup({
-  "maxWidth": 180,
-});
-
-        
+                marker_efd7e77c41ebd2726e3957df395b3aa4.setIcon(icon_4910e9e3110422b7332071c5f84ced72);
             
-                var html_1b44690b8ad3f4121214898a40a8ea90 = $(`<div id="html_1b44690b8ad3f4121214898a40a8ea90" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/11.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/11.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_834037d41148029dbea9532e9090acdb.setContent(html_1b44690b8ad3f4121214898a40a8ea90);
-            
-        
-
-        circle_marker_59967d335a6bce8df008f6ae8216fd5b.bindPopup(popup_834037d41148029dbea9532e9090acdb)
-        ;
-
-        
     
-    
-            var circle_marker_bd47d95bf1728ed39336f55b41fd9549 = L.circleMarker(
-                [4.4397883, -75.2221951],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
-        
-    
-        var popup_1ab7831d8e7631f020078777d404a383 = L.popup({
-  "maxWidth": 180,
-});
-
-        
-            
-                var html_0e0b6a5405c9a298f48591e7a854a19c = $(`<div id="html_0e0b6a5405c9a298f48591e7a854a19c" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/12.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/12.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_1ab7831d8e7631f020078777d404a383.setContent(html_0e0b6a5405c9a298f48591e7a854a19c);
-            
-        
-
-        circle_marker_bd47d95bf1728ed39336f55b41fd9549.bindPopup(popup_1ab7831d8e7631f020078777d404a383)
-        ;
-
-        
-    
-    
-            var circle_marker_310e7f2f8fb3985f4ffe31d81580f5dd = L.circleMarker(
-                [4.4398063, -75.2223093],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
-        
-    
-        var popup_3d5ed69cfe5fea547e06a6eba736bca2 = L.popup({
-  "maxWidth": 180,
-});
-
-        
-            
-                var html_a7d0c38610608923a741fe114effbc1f = $(`<div id="html_a7d0c38610608923a741fe114effbc1f" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/13.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/13.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_3d5ed69cfe5fea547e06a6eba736bca2.setContent(html_a7d0c38610608923a741fe114effbc1f);
-            
-        
-
-        circle_marker_310e7f2f8fb3985f4ffe31d81580f5dd.bindPopup(popup_3d5ed69cfe5fea547e06a6eba736bca2)
-        ;
-
-        
-    
-    
-            var circle_marker_c703d13d489918d3aa91f87ba297c8b3 = L.circleMarker(
-                [4.4398169, -75.2223804],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
-        
-    
-        var popup_4e03ba801a60aa7484f2a83a6cb91747 = L.popup({
-  "maxWidth": 180,
-});
-
-        
-            
-                var html_8079d5972fe62c49b6d5b8c68493f812 = $(`<div id="html_8079d5972fe62c49b6d5b8c68493f812" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/14.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/14.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_4e03ba801a60aa7484f2a83a6cb91747.setContent(html_8079d5972fe62c49b6d5b8c68493f812);
-            
-        
-
-        circle_marker_c703d13d489918d3aa91f87ba297c8b3.bindPopup(popup_4e03ba801a60aa7484f2a83a6cb91747)
-        ;
-
-        
-    
-    
-            var circle_marker_6dc8a07d0ade6686a56475572cb68c43 = L.circleMarker(
-                [4.4398224, -75.2224394],
-                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": true, "fillColor": "blue", "fillOpacity": 0.9, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "opacity": 1.0, "radius": 4, "stroke": true, "weight": 3}
-            ).addTo(map_7bbfa968a463a0c61a4c3189f0448d93);
-        
-    
-        var popup_565786c0ae996a1470550a50b6a30e83 = L.popup({
-  "maxWidth": 180,
-});
-
-        
-            
-                var html_2e132ea32910e2b49247a7dc1d943237 = $(`<div id="html_2e132ea32910e2b49247a7dc1d943237" style="width: 100.0%; height: 100.0%;">                 <div style="position: relative; width: 150px;">                     <button onclick="mostrarImagen('../img/15.webp')" style="                         position: absolute;                         top: 2px;                         left: 2px;                         padding: 2px 4px;                         font-size: 10px;                         border: none;                         background-color: transparent;                         border-radius: 3px;                         cursor: pointer;                         z-index: 10;                     ">🔍</button>                     <img src="../img/15.webp" width="150px" style="display: block; border-radius: 4px;">                 </div>                 </div>`)[0];
-                popup_565786c0ae996a1470550a50b6a30e83.setContent(html_2e132ea32910e2b49247a7dc1d943237);
-            
-        
-
-        circle_marker_6dc8a07d0ade6686a56475572cb68c43.bindPopup(popup_565786c0ae996a1470550a50b6a30e83)
-        ;
-
-        
-    
-    
-            map_7bbfa968a463a0c61a4c3189f0448d93.fitBounds(
-                [[4.4338259, -75.2154676], [4.4340367, -75.2154097], [4.434248, -75.2153928], [4.4343051, -75.2153872], [4.4343766, -75.2153737], [4.4344029, -75.2153614], [4.4344468, -75.2153334], [4.4344673, -75.2153025], [4.4344796, -75.2152572], [4.4344627, -75.2149712], [4.4396982, -75.221622], [4.4397883, -75.2221951], [4.4398063, -75.2223093], [4.4398169, -75.2223804], [4.4398224, -75.2224394]],
+            map_f0738a2276d6f8372b04a3987af27304.fitBounds(
+                [[4.442146831012367, -75.21944242366466], [4.442330098785159, -75.21935107753669], [4.4424380356116275, -75.21930709606768], [4.4424953770442706, -75.21928228600824], [4.44259994082674, -75.21923492134916], [4.442834928190294, -75.21912553154158], [4.443006952387285, -75.21901952492395], [4.443180100881579, -75.21892141241618], [4.443282415884169, -75.2188650259175], [4.443276794181367, -75.21863835219278], [4.4433228921439945, -75.2183451423996]],
                 {}
             );
         

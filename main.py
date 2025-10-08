@@ -2,6 +2,7 @@ import sys
 import os
 import shutil
 import json
+import cv2
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QToolButton,
     QFileDialog, QHBoxLayout, QMessageBox
@@ -9,11 +10,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QUrl, QSize
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtGui import QIcon
-from PIL import Image, ImageDraw, ImageFont
-from Map_generator import generar_mapa
+from Map_generator import generar_mapa_desde_todas_las_subcarpetas
 
-file_path = None
-imagen_segundos = []
 ESTADO_JSON = "estado_app.json"
 
 class MapaApp(QWidget):
@@ -66,20 +64,8 @@ class MapaApp(QWidget):
             }
         """)
         btn.setFixedSize(50, 50)
-        btn.clicked.connect(lambda: self.validar_boton(callback, tooltip))
+        btn.clicked.connect(callback)
         return btn
-
-    def validar_boton(self, callback, tooltip):
-        if callback == self.abrir_archivo and (not self.estado["imagenes_cargadas"] or not self.estado["esperando_coords"]):
-            QMessageBox.information(self, "Instrucción", f"⚠️ '{tooltip}' requiere imágenes nuevas antes de cargar coordenadas.")
-            return
-        if callback == self.importar_labels and not self.estado["imagenes_cargadas"]:
-            QMessageBox.information(self, "Instrucción", f"⚠️ '{tooltip}' requiere que primero se importen imágenes.")
-            return
-        if callback == self.importar_imagenes and self.estado["esperando_coords"]:
-            QMessageBox.information(self, "Instrucción", "⚠️ Debes importar las coordenadas antes de subir un nuevo grupo de imágenes.")
-            return
-        callback()
 
     def crear_barra_navegacion(self):
         nav_bar = QHBoxLayout()
@@ -87,13 +73,11 @@ class MapaApp(QWidget):
         nav_bar.setSpacing(4)
 
         btn_cargar = self.crear_boton_icono("assets/icons/map.svg", "Cargar mapa", self.on_cargar_click)
-        self.btn_archivo = self.crear_boton_icono("assets/icons/file.svg", "Seleccionar Coordenadas", self.abrir_archivo)
-        btn_imagenes = self.crear_boton_icono("assets/icons/image.svg", "Importar imágenes", self.importar_imagenes)
-        btn_videos = self.crear_boton_icono("assets/icons/video.svg", "Importar videos", self.importar_videos)
-        self.btn_labels = self.crear_boton_icono("assets/icons/archive.svg", "Importar labels", self.importar_labels)
+        btn_importar_recorrido = self.crear_boton_icono("assets/icons/file.svg", "Importar Recorrido", self.importar_recorrido)
+        btn_extraer_frames = self.crear_boton_icono("assets/icons/image.svg", "Extraer frames", self.extraer_frames_recorrido)
         btn_borrar = self.crear_boton_icono("assets/icons/trash.svg", "Borrar todo", self.borrar_datos)
 
-        for btn in [btn_cargar, self.btn_archivo, btn_imagenes, btn_videos, self.btn_labels, btn_borrar]:
+        for btn in [btn_cargar, btn_importar_recorrido, btn_extraer_frames, btn_borrar]:
             nav_bar.addWidget(btn)
 
         nav_bar.addStretch()
@@ -111,7 +95,7 @@ class MapaApp(QWidget):
         html_placeholder = """
         <div style='text-align:center; margin-top:100px; color:#ccc; font-family:Segoe UI, sans-serif;'>
             <h2 style='margin-top:20px;'>No hay archivo de mapa cargado</h2>
-            <p style='font-size:14px;'>Importa coordenadas para visualizar el mapa generado</p>
+            <p style='font-size:14px;'>Importa un recorrido para visualizar el mapa generado</p>
         </div>
         """
         self.web_view.setHtml(html_placeholder)
@@ -121,16 +105,94 @@ class MapaApp(QWidget):
         if os.path.exists(html_path):
             self.web_view.load(QUrl.fromLocalFile(html_path))
 
-    def abrir_archivo(self):
-        global file_path
-        path, _ = QFileDialog.getOpenFileName(self, "Seleccionar archivo", "", "Archivos de texto (*.txt)")
-        if path:
-            file_path = path
-            print("Archivo seleccionado:", file_path)
-            generar_mapa(file_path, self.estado["imagen_segundos"])
-            QMessageBox.information(self, "Importación exitosa", "✅ Se importaron correctamente las coordenadas.")
-            self.estado["esperando_coords"] = False
-            self.guardar_estado()
+    def importar_recorrido(self):
+        archivos, _ = QFileDialog.getOpenFileNames(self, "Selecciona video y coordenadas", "")
+        if len(archivos) != 2:
+            QMessageBox.warning(self, "Error", "Debes seleccionar un video (.webm) y un archivo de coordenadas (.txt).")
+            return
+
+        video = next((f for f in archivos if f.lower().endswith(".webm")), None)
+        coords = next((f for f in archivos if f.lower().endswith(".txt")), None)
+        if not video or not coords:
+            QMessageBox.warning(self, "Error", "Selecciona un video (.webm) y un archivo de coordenadas (.txt).")
+            return
+
+        base_dir_coords = os.path.abspath("Coords")
+        base_dir_vids = os.path.abspath("Vids")
+        n = 1
+        while os.path.exists(os.path.join(base_dir_coords, f"recorrido{n}")):
+            n += 1
+        subfolder = f"recorrido{n}"
+
+        coords_dest = os.path.join(base_dir_coords, subfolder)
+        vids_dest = os.path.join(base_dir_vids, subfolder)
+        os.makedirs(coords_dest, exist_ok=True)
+        os.makedirs(vids_dest, exist_ok=True)
+
+        shutil.copy(coords, os.path.join(coords_dest, "cordenadas.txt"))
+        shutil.copy(video, os.path.join(vids_dest, "video.webm"))
+
+        generar_mapa_desde_todas_las_subcarpetas()
+        self.verificar_mapa_inicial()
+        QMessageBox.information(self, "Importación exitosa", f"Recorrido importado en {subfolder}.")
+
+    def extraer_frames_recorrido(self):
+        # Selecciona el recorrido (subcarpeta) para extraer frames
+        base_dir_vids = os.path.abspath("Vids")
+        base_dir_imgs = os.path.abspath("Img")
+        base_dir_coords = os.path.abspath("Coords")
+        recorridos = [d for d in os.listdir(base_dir_vids) if os.path.isdir(os.path.join(base_dir_vids, d))]
+        if not recorridos:
+            QMessageBox.warning(self, "Error", "No hay recorridos para extraer frames.")
+            return
+
+        # Selecciona el último recorrido agregado
+        recorrido = sorted(recorridos, key=lambda x: int(x.replace("recorrido", "")))[-1]
+        video_path = os.path.join(base_dir_vids, recorrido, "video.webm")
+        coords_path = os.path.join(base_dir_coords, recorrido, "cordenadas.txt")
+        if not os.path.exists(video_path) or not os.path.exists(coords_path):
+            QMessageBox.warning(self, "Error", "No se encontró el video o las coordenadas para el recorrido seleccionado.")
+            return
+
+        # Leer segundos desde el archivo de coordenadas
+        segundos = []
+        with open(coords_path, "r") as f:
+            for linea in f:
+                if "Segundo" in linea:
+                    partes = linea.strip().split(":")
+                    segundo = int(partes[0].replace("Segundo", "").strip())
+                    segundos.append(segundo)
+
+        if not segundos:
+            QMessageBox.warning(self, "Error", "No se encontraron segundos en el archivo de coordenadas.")
+            return
+
+        img_dest = os.path.join(base_dir_imgs, recorrido)
+        os.makedirs(img_dest, exist_ok=True)
+
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        duracion = int(total_frames / fps)
+
+        for segundo in segundos:
+            frame_id = int(segundo * fps)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
+            ret, frame = cap.read()
+            if ret:
+                img_path = os.path.join(img_dest, f"{segundo}.webp")
+                cv2.imwrite(img_path, frame)
+        cap.release()
+
+        # Validar que todos los frames existen
+        faltantes = [s for s in segundos if not os.path.exists(os.path.join(img_dest, f"{s}.webp"))]
+        if faltantes:
+            QMessageBox.warning(self, "Error", f"Faltan algunos frames: {faltantes}")
+        else:
+            # Actualizar el mapa
+            generar_mapa_desde_todas_las_subcarpetas()
+            self.verificar_mapa_inicial()
+            QMessageBox.information(self, "Frames extraídos", f"Frames extraídos y mapa actualizado para Img/{recorrido}")
 
     def on_cargar_click(self):
         html_path = os.path.abspath("Mapa/MapaFinal.html")
@@ -138,134 +200,6 @@ class MapaApp(QWidget):
             self.web_view.load(QUrl.fromLocalFile(html_path))
         else:
             QMessageBox.critical(self, "Error", "❌ No se encontró el archivo")
-
-    def importar_imagenes(self):
-        global imagen_segundos
-        imagen_segundos = []
-
-        folder_destino = os.path.abspath("Img")
-        os.makedirs(folder_destino, exist_ok=True)
-
-        archivos, _ = QFileDialog.getOpenFileNames(self, "Seleccionar imágenes", "", "Imágenes WEBP (*.webp)")
-        if not archivos:
-            return
-
-        segundos_originales = []
-        for archivo in archivos:
-            base = os.path.splitext(os.path.basename(archivo))[0]
-            if base.isdigit():
-                segundos_originales.append(int(base))
-        imagen_segundos = segundos_originales.copy()
-
-        existentes = [int(os.path.splitext(f)[0]) for f in os.listdir(folder_destino)
-                      if f.lower().endswith(".webp") and os.path.splitext(f)[0].isdigit()]
-        max_existente = max(existentes, default=0)
-
-        for i, archivo in enumerate(archivos):
-            nuevo_nombre = f"{max_existente + i + 1}.webp"
-            nueva_ruta = os.path.join(folder_destino, nuevo_nombre)
-            shutil.copy(archivo, nueva_ruta)
-
-        self.estado["imagenes_cargadas"] = True
-        self.estado["imagen_segundos"] = imagen_segundos
-        self.estado["esperando_coords"] = True
-        self.guardar_estado()
-
-        QMessageBox.information(self, "Importación exitosa", f"✅ Se importaron {len(archivos)} imágenes.")
-        print("Segundos originales:", imagen_segundos)
-
-    def importar_videos(self):
-        folder_destino = os.path.abspath("Vids")
-        os.makedirs(folder_destino, exist_ok=True)
-
-        archivos, _ = QFileDialog.getOpenFileNames(self, "Seleccionar videos", "", "Videos WEBM (*.webm)")
-        if archivos:
-            existentes = [int(os.path.splitext(f)[0]) for f in os.listdir(folder_destino)
-                          if f.endswith(".webm") and os.path.splitext(f)[0].isdigit()]
-            max_num = max(existentes, default=0) + 1
-
-            for i, archivo in enumerate(archivos):
-                nuevo_nombre = f"{max_num + i}.webm"
-                nueva_ruta = os.path.join(folder_destino, nuevo_nombre)
-                shutil.copy(archivo, nueva_ruta)
-
-            QMessageBox.information(self, "Importación exitosa", f"✅ Se importaron {len(archivos)} videos.")
-
-    def importar_labels(self):
-        if not self.estado["imagenes_cargadas"]:
-            QMessageBox.warning(self, "Validación", "⚠️ Primero debes importar imágenes antes de cargar labels.")
-            return
-
-        folder_labels = os.path.abspath("Labels")
-        folder_imgs = os.path.abspath("Img")
-        os.makedirs(folder_labels, exist_ok=True)
-
-        archivos, _ = QFileDialog.getOpenFileNames(self, "Seleccionar labels", "", "Archivos de texto (*.txt)")
-        if not archivos:
-            QMessageBox.warning(self, "Sin archivos", "⚠️ No se seleccionaron archivos de labels.")
-            return
-
-        existentes = [int(os.path.splitext(f)[0]) for f in os.listdir(folder_labels)
-                      if f.endswith(".txt") and os.path.splitext(f)[0].isdigit()]
-        max_num = max(existentes, default=0) + 1
-
-        actualizados = 0
-
-        for i, archivo in enumerate(archivos):
-            nuevo_nombre = f"{max_num + i}.txt"
-            ruta_label_destino = os.path.join(folder_labels, nuevo_nombre)
-            shutil.copy(archivo, ruta_label_destino)
-
-            nombre_base = os.path.splitext(nuevo_nombre)[0]
-            img_path = os.path.join(folder_imgs, f"{nombre_base}.webp")
-            if not os.path.exists(img_path):
-                continue
-
-            try:
-                with open(ruta_label_destino, "r") as f:
-                    lines = f.readlines()
-
-                img = Image.open(img_path).convert("RGB")
-                draw = ImageDraw.Draw(img)
-                w, h = img.size
-                font = ImageFont.load_default()
-
-                for line in lines:
-                    parts = list(map(float, line.strip().split()))
-                    if len(parts) == 4:
-                        x, y, ancho, alto = parts
-                    elif len(parts) == 5:
-                        _, x, y, ancho, alto = parts
-                    else:
-                        continue
-
-                    x0 = (x - ancho / 2) * w
-                    y0 = (y - alto / 2) * h
-                    x1 = (x + ancho / 2) * w
-                    y1 = (y + alto / 2) * h
-                    draw.rectangle([x0, y0, x1, y1], outline="blue", width=3)
-
-                    text = "pothole"
-                    bbox = draw.textbbox((0, 0), text, font=font)
-                    text_width = bbox[2] - bbox[0]
-                    text_height = bbox[3] - bbox[1]
-                    text_x, text_y = x0, y0 - text_height - 4
-
-                    draw.rectangle([text_x, text_y, text_x + text_width + 4, text_y + text_height + 4], fill="blue")
-                    draw.text((text_x + 2, text_y + 2), text, fill="white", font=font)
-
-                img.save(img_path)
-                actualizados += 1
-
-            except Exception as e:
-                print(f"⚠️ Error procesando {nuevo_nombre}: {e}")
-
-        if actualizados > 0:
-            QMessageBox.information(self, "Proceso completado", f"✅ Se actualizaron {actualizados} imágenes.")
-            self.estado["imagenes_cargadas_labels"] = True
-            self.guardar_estado()
-        else:
-            QMessageBox.warning(self, "Sin cambios", "⚠️ No se actualizó ninguna imagen.")
 
     def borrar_datos(self):
         confirm = QMessageBox.question(self, "Confirmar eliminación",

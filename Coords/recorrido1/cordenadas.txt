@@ -1,0 +1,11 @@
+Segundo 1: Latitud = 4.442146831012367, Longitud = -75.21944242366466  
+Segundo 2: Latitud = 4.442330098785159, Longitud = -75.21935107753669  
+Segundo 3: Latitud = 4.4424380356116275, Longitud = -75.21930709606768  
+Segundo 4: Latitud = 4.4424953770442706, Longitud = -75.21928228600824  
+Segundo 5: Latitud = 4.44259994082674, Longitud = -75.21923492134916  
+Segundo 6: Latitud = 4.442834928190294, Longitud = -75.21912553154158  
+Segundo 7: Latitud = 4.443006952387285, Longitud = -75.21901952492395  
+Segundo 8: Latitud = 4.443180100881579, Longitud = -75.21892141241618  
+Segundo 9: Latitud = 4.443282415884169, Longitud = -75.2188650259175  
+Segundo 10: Latitud = 4.443276794181367, Longitud = -75.21863835219279  
+Segundo 11: Latitud = 4.4433228921439945, Longitud = -75.2183451423996  
