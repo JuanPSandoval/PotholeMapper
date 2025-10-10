@@ -1,24 +1,112 @@
 import sys
 import os
 import shutil
-import json
-import cv2
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QToolButton,
     QFileDialog, QHBoxLayout, QMessageBox, QLabel, QPushButton,
-    QScrollArea, QGridLayout, QSizePolicy, QDialog, QSpacerItem
+    QScrollArea, QGridLayout, QSizePolicy, QDialog, QProgressBar
 )
-from PyQt5.QtCore import Qt, QUrl, QSize, QThread, pyqtSignal, QTimer
+from PyQt5.QtCore import Qt, QUrl, QSize, QThread, pyqtSignal
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtGui import QIcon, QPixmap, QCursor, QMovie
+from PyQt5.QtGui import QIcon, QPixmap, QCursor
 from Map_generator import generar_mapa_desde_todas_las_subcarpetas
+
+from frame_selector import load_hyperiqa_model, flujo_completo
+
+class ProgressDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setModal(True)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setStyleSheet("""
+            QDialog {
+                background: transparent;
+            }
+            QLabel {
+                color: #09164f;
+                font-size: 18px;
+                background: transparent;
+            }
+            QProgressBar {
+                border: 2px solid #0078d7;
+                border-radius: 8px;
+                text-align: center;
+                font-size: 16px;
+                color: #fff;
+                background: #23272e;
+                height: 28px;
+            }
+            QProgressBar::chunk {
+                background: qlineargradient(
+                    x1:0, y1:0, x2:1, y2:0,
+                    stop:0 #00aaff, stop:1 #0078d7
+                );
+                border-radius: 8px;
+            }
+        """)
+        layout = QVBoxLayout()
+        layout.setAlignment(Qt.AlignCenter)
+        self.setLayout(layout)
+
+        self.label = QLabel("Extrayendo frames, por favor espera...")
+        self.label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.label)
+
+        self.progress = QProgressBar()
+        self.progress.setMinimum(0)
+        self.progress.setMaximum(100)
+        self.progress.setValue(0)
+        self.progress.setFixedHeight(32)
+        layout.addWidget(self.progress)
+
+        self.setFixedSize(400, 160)
+
+    def set_progress(self, value, total):
+        percent = int((value / total) * 100) if total > 0 else 0
+        self.progress.setValue(percent)
+        self.label.setText(f"Extrayendo frames ({value}/{total})...")
+
+class FrameProcessingThread(QThread):
+    finished = pyqtSignal()
+    error = pyqtSignal(str)
+    progress = pyqtSignal(int, int)
+
+    def __init__(self, video_path, clips_dir, frameclips_dir, framerep_dest, duracion_clip, model_hyper, transforms, device):
+        super().__init__()
+        self.video_path = video_path
+        self.clips_dir = clips_dir
+        self.frameclips_dir = frameclips_dir
+        self.framerep_dest = framerep_dest
+        self.duracion_clip = duracion_clip
+        self.model_hyper = model_hyper
+        self.transforms = transforms
+        self.device = device
+
+    def run(self):
+        try:
+            def progress_callback(val, total):
+                self.progress.emit(val, total)
+            flujo_completo(
+                video_path=self.video_path,
+                clips_dir=self.clips_dir,
+                frameclips_dir=self.frameclips_dir,
+                framerep_dest=self.framerep_dest,
+                duracion_clip=self.duracion_clip,
+                model_hyper=self.model_hyper,
+                transforms=self.transforms,
+                device=self.device,
+                progress_callback=progress_callback
+            )
+            self.finished.emit()
+        except Exception as e:
+            self.error.emit(str(e))
 
 class LoadingDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         self.setModal(True)
-        # Fondo completamente transparente
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setStyleSheet("""
             QDialog {
@@ -60,40 +148,12 @@ class ZoomImageWindow(QWidget):
         layout.addWidget(lbl)
         self.setMinimumSize(400, 300)
 
-class FrameExtractorThread(QThread):
-    finished = pyqtSignal()
-    error = pyqtSignal(str)
-    progress = pyqtSignal(int, int)
-
-    def __init__(self, video_path, segundos, img_dest):
-        super().__init__()
-        self.video_path = video_path
-        self.segundos = segundos
-        self.img_dest = img_dest
-
-    def run(self):
-        try:
-            cap = cv2.VideoCapture(self.video_path)
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            total = len(self.segundos)
-            for idx, segundo in enumerate(self.segundos):
-                frame_id = int(segundo * fps)
-                cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
-                ret, frame = cap.read()
-                if ret:
-                    img_path = os.path.join(self.img_dest, f"{segundo}.webp")
-                    cv2.imwrite(img_path, frame)
-                self.progress.emit(idx + 1, total)
-            cap.release()
-            self.finished.emit()
-        except Exception as e:
-            self.error.emit(str(e))
-
 class FrameReviewWindow(QWidget):
-    def __init__(self, img_folder, on_finish_callback):
+    def __init__(self, img_folder, img_dest, on_finish_callback):
         super().__init__()
         self.setWindowTitle("Revisión de Frames")
         self.img_folder = img_folder
+        self.img_dest = img_dest
         self.on_finish_callback = on_finish_callback
         self.selected = set()
         self.img_labels = []
@@ -231,6 +291,15 @@ class FrameReviewWindow(QWidget):
         self.zoom_win.show()
 
     def finish_and_close(self):
+        # Al pulsar "Enviar / Seguir", copiar los frames restantes a Img/recorridoX/
+        if os.path.exists(self.img_dest):
+            for f in os.listdir(self.img_dest):
+                os.remove(os.path.join(self.img_dest, f))
+        else:
+            os.makedirs(self.img_dest, exist_ok=True)
+        for f in os.listdir(self.img_folder):
+            if f.lower().endswith(".webp"):
+                shutil.copy(os.path.join(self.img_folder, f), os.path.join(self.img_dest, f))
         self.on_finish_callback()
         self.close()
 
@@ -240,12 +309,10 @@ class MapaApp(QWidget):
         self.setWindowTitle("App con Mapa")
         self.setGeometry(100, 100, 1000, 700)
         self.setMinimumSize(600, 400)
-
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.setLayout(self.layout)
-
         self.crear_barra_navegacion()
         self.crear_vista_mapa()
         self.verificar_mapa_inicial()
@@ -341,69 +408,86 @@ class MapaApp(QWidget):
 
     def extraer_frames_recorrido(self):
         base_dir_vids = os.path.abspath("Vids")
-        base_dir_imgs = os.path.abspath("Img")
         base_dir_coords = os.path.abspath("Coords")
+        base_dir_clips = os.path.abspath("Clips")
+        base_dir_frameclips = os.path.abspath("FrameClips")
+        base_dir_framerep = os.path.abspath("frameRep")
+        base_dir_imgs = os.path.abspath("Img")
         recorridos = [d for d in os.listdir(base_dir_vids) if os.path.isdir(os.path.join(base_dir_vids, d))]
         if not recorridos:
             QMessageBox.warning(self, "Error", "No hay recorridos para extraer frames.")
             return
-
         recorrido = sorted(recorridos, key=lambda x: int(x.replace("recorrido", "")))[-1]
         video_path = os.path.join(base_dir_vids, recorrido, "video.webm")
         coords_path = os.path.join(base_dir_coords, recorrido, "cordenadas.txt")
         if not os.path.exists(video_path) or not os.path.exists(coords_path):
             QMessageBox.warning(self, "Error", "No se encontró el video o las coordenadas para el recorrido seleccionado.")
             return
-
-        segundos = []
-        with open(coords_path, "r") as f:
-            for linea in f:
-                if "Segundo" in linea:
-                    partes = linea.strip().split(":")
-                    segundo = int(partes[0].replace("Segundo", "").strip())
-                    segundos.append(segundo)
-
-        if not segundos:
-            QMessageBox.warning(self, "Error", "No se encontraron segundos en el archivo de coordenadas.")
-            return
-
+        clips_dir = os.path.join(base_dir_clips, recorrido)
+        frameclips_dir = os.path.join(base_dir_frameclips, recorrido)
+        framerep_dest = os.path.join(base_dir_framerep, recorrido)
         img_dest = os.path.join(base_dir_imgs, recorrido)
+        os.makedirs(clips_dir, exist_ok=True)
+        os.makedirs(frameclips_dir, exist_ok=True)
+        os.makedirs(framerep_dest, exist_ok=True)
         os.makedirs(img_dest, exist_ok=True)
 
-        # Pantalla de carga personalizada
-        self.loading_dialog = LoadingDialog(self)
-        self.loading_dialog.show()
+        self.progress_dialog = ProgressDialog(self)
+        self.progress_dialog.show()
         QApplication.processEvents()
 
-        def on_progress(val, total):
-            # No barra, solo mantener el loading visible
-            pass
+        try:
+            model_hyper, transforms, device = load_hyperiqa_model('./pretrained/koniq_pretrained.pkl')
+            self.thread = FrameProcessingThread(
+                video_path=video_path,
+                clips_dir=clips_dir,
+                frameclips_dir=frameclips_dir,
+                framerep_dest=framerep_dest,
+                duracion_clip=2,
+                model_hyper=model_hyper,
+                transforms=transforms,
+                device=device
+            )
+            self.thread.finished.connect(self.on_frames_processed)
+            self.thread.error.connect(self.on_frames_error)
+            self.thread.progress.connect(self.on_progress_update)
+            self.thread.start()
+        except Exception as e:
+            self.progress_dialog.close()
+            QMessageBox.critical(self, "Error", f"Error extrayendo frames: {e}")
 
-        def on_finished():
-            self.loading_dialog.close()
-            faltantes = [s for s in segundos if not os.path.exists(os.path.join(img_dest, f"{s}.webp"))]
-            if faltantes:
-                QMessageBox.warning(self, "Error", f"Faltan algunos frames: {faltantes}")
-            else:
-                self.revision_window = FrameReviewWindow(
-                    img_dest,
-                    on_finish_callback=self.actualizar_mapa_despues_revision
-                )
-                self.revision_window.show()
+    def on_progress_update(self, value, total):
+        self.progress_dialog.set_progress(value, total)
 
-        def on_error(msg):
-            self.loading_dialog.close()
-            QMessageBox.critical(self, "Error", f"Error extrayendo frames: {msg}")
+    def on_frames_processed(self):
+        self.progress_dialog.close()
+        recorrido = self.get_last_recorrido()
+        framerep_dest = os.path.join(os.path.abspath("frameRep"), recorrido)
+        img_dest = os.path.join(os.path.abspath("Img"), recorrido)
+        self.revision_window = FrameReviewWindow(
+            img_folder=framerep_dest,
+            img_dest=img_dest,
+            on_finish_callback=self.actualizar_mapa_despues_revision
+        )
+        self.revision_window.show()
 
-        self.extractor_thread = FrameExtractorThread(video_path, segundos, img_dest)
-        self.extractor_thread.progress.connect(on_progress)
-        self.extractor_thread.finished.connect(on_finished)
-        self.extractor_thread.error.connect(on_error)
-        self.extractor_thread.start()
+    def on_frames_error(self, msg):
+        self.progress_dialog.close()
+        QMessageBox.critical(self, "Error", f"Error extrayendo frames: {msg}")
+
+    def get_last_recorrido(self):
+        base_dir_vids = os.path.abspath("Vids")
+        recorridos = [d for d in os.listdir(base_dir_vids) if os.path.isdir(os.path.join(base_dir_vids, d))]
+        if not recorridos:
+            return ""
+        return sorted(recorridos, key=lambda x: int(x.replace("recorrido", "")))[-1]
 
     def actualizar_mapa_despues_revision(self):
         generar_mapa_desde_todas_las_subcarpetas()
-        self.verificar_mapa_inicial()
+        html_path = os.path.abspath("Mapa/MapaFinal.html")
+        url = QUrl.fromLocalFile(html_path)
+        url.setQuery(f"v={os.path.getmtime(html_path)}")
+        self.web_view.load(url)
         QMessageBox.information(self, "Frames procesados", "Frames revisados y mapa actualizado.")
 
     def on_cargar_click(self):
@@ -428,6 +512,9 @@ class MapaApp(QWidget):
                 os.path.abspath("Vids"),
                 os.path.abspath("Coords"),
                 os.path.abspath("Labels"),
+                os.path.abspath("Clips"),
+                os.path.abspath("frameclips"),
+                os.path.abspath("frameRep")
             ]
 
             for ruta in rutas:
@@ -441,6 +528,9 @@ class MapaApp(QWidget):
             os.makedirs("Vids", exist_ok=True)
             os.makedirs("Coords", exist_ok=True)
             os.makedirs("Labels", exist_ok=True)
+            os.makedirs("Clips", exist_ok=True)
+            os.makedirs("frameclips", exist_ok=True)
+            os.makedirs("frameRep", exist_ok=True)
 
             self.mostrar_placeholder_mapa()
             QMessageBox.information(self, "Eliminación completada", "🧹 Todo ha sido borrado correctamente.")
